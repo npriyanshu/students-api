@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/npriyanshu/students-api/internal/config"
+	"github.com/npriyanshu/students-api/internal/http/handlers/student"
+	"github.com/npriyanshu/students-api/internal/storage/sqlite"
 )
 
 // import "fmt"
@@ -20,17 +22,27 @@ func main() {
 
 	// load config
 	cfg := config.MustLoad()
+
 	// database setup
+	storage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %s", err)
+	}
+
+	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version","1.0.0"))
+
+	
+
 	// setup router
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("POST /api/students", student.New(storage))
+	router.HandleFunc("GET /api/students/{id}", student.GetById(storage))
 
-		w.Write([]byte("Welcome to the students api"))
 
-		w.Write([]byte("this is updated response"))
-	})
+
+
 	// setup server
 	server := http.Server {
 		Addr:    cfg.HTTPServer.Addr,
@@ -57,10 +69,10 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
-	err := server.Shutdown(ctx)
+	serr := server.Shutdown(ctx)
 
-	if err != nil {
-		slog.Error("Error occurred while shutting down the server", "error", err)
+	if serr != nil {
+		slog.Error("Error occurred while shutting down the server", "error", serr)
 	} 
 	slog.Info("Server stopped gracefully")
 	
