@@ -43,6 +43,7 @@ func MustLoad() *Config {
 
 	var cfg Config
 
+	// read config and serialize it into the struct
 	err := cleanenv.ReadConfig(configPath, &cfg)
     
 	if err != nil {
